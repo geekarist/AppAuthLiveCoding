@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">AppAuthLiveCoding</string>
+    <string name="main_hello_user">Hello %1$s</string>
 </resources>
