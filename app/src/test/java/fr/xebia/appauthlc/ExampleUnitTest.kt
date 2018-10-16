@@ -1,4 +1,4 @@
-package appauthlc.xebia.fr.appauthlivecoding
+package fr.xebia.appauthlc
 
 import org.junit.Test
 
