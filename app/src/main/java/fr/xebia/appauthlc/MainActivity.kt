@@ -31,10 +31,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestAuth() {
-        val authorizationEndpoint = Uri.parse("TODO")
-        val tokenEndpoint = Uri.parse("TODO")
-        val clientId = "TODO"
-        val redirectUri = Uri.parse("TODO")
+        val authorizationEndpoint = Uri.parse(BuildConfig.GOOGLE_AUTH_ENDPOINT)
+        val tokenEndpoint = Uri.parse(BuildConfig.GOOGLE_TOKEN_ENDPOINT)
+        val clientId = BuildConfig.GOOGLE_CLIENT_ID
+        val redirectUri = Uri.parse(BuildConfig.GOOGLE_REDIRECT_URI)
 
         val authConfig = AuthorizationServiceConfiguration(authorizationEndpoint, tokenEndpoint)
         val authorizationService = AuthorizationService(this)
@@ -44,9 +44,9 @@ class MainActivity : AppCompatActivity() {
                 clientId,
                 ResponseTypeValues.CODE,
                 redirectUri
-        ).build()
+        ).setScope("profile").build()
 
-        val completedIntent = Intent(this, javaClass).setAction(Companion.ACTION_AUTH_CODE_RESPONSE)
+        val completedIntent = Intent(this, javaClass).setAction(ACTION_AUTH_CODE_RESPONSE)
         val pendingIntent = PendingIntent.getActivity(
                 this,
                 REQUEST_PERFORM_AUTH,

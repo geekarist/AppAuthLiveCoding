@@ -4,6 +4,14 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
+def googleProps = new Properties()
+googleProps.load(new FileInputStream('private/google.properties'))
+
+static def propVal(Properties props, String name) {
+    def value = props.get(name)
+    return "\"${value}\""
+}
+
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -13,7 +21,11 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders = [appAuthRedirectScheme: 'aalc']
+        manifestPlaceholders = [appAuthRedirectScheme: propVal(googleProps, 'appauth.redirect.scheme')]
+        buildConfigField 'String', 'GOOGLE_CLIENT_ID', propVal(googleProps, 'client.id')
+        buildConfigField 'String', 'GOOGLE_REDIRECT_URI', propVal(googleProps, 'redirect.uri')
+        buildConfigField 'String', 'GOOGLE_AUTH_ENDPOINT', propVal(googleProps, 'authorization.endpoint')
+        buildConfigField 'String', 'GOOGLE_TOKEN_ENDPOINT', propVal(googleProps, 'token.endpoint')
 
     }
     buildTypes {
