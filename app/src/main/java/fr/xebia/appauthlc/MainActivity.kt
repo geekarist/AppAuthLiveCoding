@@ -15,22 +15,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         when (intent?.action) {
-            Intent.ACTION_MAIN -> requestAuth()
-            ACTION_AUTH_CODE_RESPONSE -> {
-                Toast.makeText(this, getAuthCode(intent), Toast.LENGTH_LONG).show()
-            }
+            Intent.ACTION_MAIN -> requestAuthCode()
+            ACTION_AUTH_CODE_RESPONSE -> handleAuthCodeResponse()
             else -> throw IllegalStateException("Unknown intent action: ${intent?.action}")
         }
     }
 
-    private fun getAuthCode(intent: Intent?): String? {
-        return intent?.let {
-            AuthorizationException.fromIntent(it)?.let { e -> throw e }
-            AuthorizationResponse.fromIntent(it)?.authorizationCode
-        }
-    }
-
-    private fun requestAuth() {
+    private fun requestAuthCode() {
         val authorizationEndpoint = Uri.parse(BuildConfig.GOOGLE_AUTH_ENDPOINT)
         val tokenEndpoint = Uri.parse(BuildConfig.GOOGLE_TOKEN_ENDPOINT)
         val clientId = BuildConfig.GOOGLE_CLIENT_ID
@@ -55,6 +46,36 @@ class MainActivity : AppCompatActivity() {
         )
         authorizationService.performAuthorizationRequest(request, pendingIntent)
         finish()
+    }
+
+    private fun handleAuthCodeResponse() {
+        intent?.apply {
+
+            val state = AuthState(
+                    AuthorizationResponse.fromIntent(intent),
+                    AuthorizationException.fromIntent(intent)
+            )
+
+            state.lastAuthorizationResponse?.createTokenExchangeRequest()?.let { tokenRequest ->
+
+                val authService = AuthorizationService(this@MainActivity)
+                authService.performTokenRequest(tokenRequest) { response, ex ->
+                    state.update(response, ex)
+                    if (ex != null) {
+                        Toast.makeText(this@MainActivity, "Error: $ex.message", Toast.LENGTH_LONG)
+                                .show()
+                    } else {
+                        state.performActionWithFreshTokens(authService) { accessToken, _, _ ->
+                            Toast.makeText(
+                                    this@MainActivity,
+                                    "Access token: $accessToken",
+                                    Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     companion object {
