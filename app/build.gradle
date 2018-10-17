@@ -21,7 +21,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders = [appAuthRedirectScheme: propVal(googleProps, 'appauth.redirect.scheme')]
+        manifestPlaceholders = [appAuthRedirectScheme: googleProps.get('appauth.redirect.scheme')]
         buildConfigField 'String', 'GOOGLE_CLIENT_ID', propVal(googleProps, 'client.id')
         buildConfigField 'String', 'GOOGLE_REDIRECT_URI', propVal(googleProps, 'redirect.uri')
         buildConfigField 'String', 'GOOGLE_AUTH_ENDPOINT', propVal(googleProps, 'authorization.endpoint')
