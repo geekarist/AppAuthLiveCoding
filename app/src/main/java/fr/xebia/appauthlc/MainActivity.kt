@@ -57,24 +57,31 @@ class MainActivity : AppCompatActivity() {
             )
 
             state.lastAuthorizationResponse?.createTokenExchangeRequest()?.let { tokenRequest ->
-
-                val authService = AuthorizationService(this@MainActivity)
-                authService.performTokenRequest(tokenRequest) { response, ex ->
-                    state.update(response, ex)
-                    if (ex != null) {
-                        Toast.makeText(this@MainActivity, "Error: $ex.message", Toast.LENGTH_LONG)
-                                .show()
-                    } else {
-                        state.performActionWithFreshTokens(authService) { accessToken, _, _ ->
-                            Toast.makeText(
-                                    this@MainActivity,
-                                    "Access token: $accessToken",
-                                    Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    }
-                }
+                performTokenRequest(tokenRequest, state)
             }
+        }
+    }
+
+    private fun performTokenRequest(tokenRequest: TokenRequest, state: AuthState) {
+        val authService = AuthorizationService(this@MainActivity)
+        authService.performTokenRequest(tokenRequest) { response, ex ->
+            state.update(response, ex)
+            if (ex != null) {
+                Toast.makeText(this@MainActivity, "Error: $ex.message", Toast.LENGTH_LONG)
+                        .show()
+            } else {
+                performAction(state, authService)
+            }
+        }
+    }
+
+    private fun performAction(state: AuthState, authService: AuthorizationService) {
+        state.performActionWithFreshTokens(authService) { accessToken, _, _ ->
+            Toast.makeText(
+                    this@MainActivity,
+                    "Access token: $accessToken",
+                    Toast.LENGTH_LONG
+            ).show()
         }
     }
 
