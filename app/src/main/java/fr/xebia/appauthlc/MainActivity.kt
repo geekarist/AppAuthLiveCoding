@@ -6,9 +6,10 @@ import android.net.Uri
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
+import kotlinx.android.synthetic.main.activity_main.*
 import net.openid.appauth.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), DisplayNameAsyncTask.Listener {
 
     private var authService: AuthorizationService? = null
 
@@ -79,8 +80,14 @@ class MainActivity : AppCompatActivity() {
     private fun performAction(state: AuthState, authService: AuthorizationService?) {
         authService?.let {
             state.performActionWithFreshTokens(it) { accessToken, _, _ ->
-                DisplayNameAsyncTask(application).execute(accessToken)
+                DisplayNameAsyncTask(this).execute(accessToken)
             }
+        }
+    }
+
+    override fun onDisplayName(displayName: String) {
+        runOnUiThread {
+            mainHello.text = getString(R.string.main_hello_user, displayName)
         }
     }
 

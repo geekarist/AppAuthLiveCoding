@@ -1,12 +1,16 @@
 package fr.xebia.appauthlc
 
-import android.app.Application
 import android.os.AsyncTask
-import android.util.Log
+import org.json.JSONObject
 import java.io.InputStreamReader
+import java.lang.ref.WeakReference
 import java.net.URL
 
-class DisplayNameAsyncTask(private val app: Application) : AsyncTask<String, Unit, Unit>() {
+class DisplayNameAsyncTask(l: Listener) : AsyncTask<String, Unit, Unit>() {
+
+    private val listenerRef = WeakReference(l)
+    private val listener
+        get() = listenerRef.get()
 
     override fun doInBackground(vararg params: String?) {
         val accessToken = params[0]
@@ -15,6 +19,14 @@ class DisplayNameAsyncTask(private val app: Application) : AsyncTask<String, Uni
         connection.addRequestProperty("Authorization", "Bearer $accessToken")
         val reader = InputStreamReader(connection.getInputStream())
         val strResponse = reader.readText()
-        Log.d(javaClass.simpleName, "Response: $strResponse")
+        val jsonObject = JSONObject(strResponse)
+        val names = jsonObject.getJSONArray("names")
+        val nameObj = names.get(0) as JSONObject
+        val displayName = nameObj.getString("displayName")
+        listener?.onDisplayName(displayName)
+    }
+
+    interface Listener {
+        fun onDisplayName(displayName: String)
     }
 }
