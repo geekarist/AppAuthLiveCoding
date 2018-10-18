@@ -2,7 +2,7 @@ package fr.xebia.appauthlc
 
 import android.app.Application
 import android.os.AsyncTask
-import android.widget.Toast
+import android.util.Log
 import java.io.InputStreamReader
 import java.net.URL
 
@@ -15,6 +15,6 @@ class DisplayNameAsyncTask(private val app: Application) : AsyncTask<String, Uni
         connection.addRequestProperty("Authorization", "Bearer $accessToken")
         val reader = InputStreamReader(connection.getInputStream())
         val strResponse = reader.readText()
-        Toast.makeText(app, "Response: $strResponse", Toast.LENGTH_LONG).show()
+        Log.d(javaClass.simpleName, "Response: $strResponse")
     }
 }

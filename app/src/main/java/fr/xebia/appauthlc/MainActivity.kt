@@ -15,6 +15,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        authService = AuthorizationService(this)
 
         when (intent?.action) {
             Intent.ACTION_MAIN -> requestAuthCode()
@@ -30,7 +31,6 @@ class MainActivity : AppCompatActivity() {
         val redirectUri = Uri.parse(BuildConfig.GOOGLE_REDIRECT_URI)
 
         val authConfig = AuthorizationServiceConfiguration(authorizationEndpoint, tokenEndpoint)
-        authService = AuthorizationService(this)
 
         val request = AuthorizationRequest.Builder(
                 authConfig,
