@@ -26,7 +26,7 @@ android {
         buildConfigField 'String', 'GOOGLE_REDIRECT_URI', propVal(googleProps, 'redirect.uri')
         buildConfigField 'String', 'GOOGLE_AUTH_ENDPOINT', propVal(googleProps, 'authorization.endpoint')
         buildConfigField 'String', 'GOOGLE_TOKEN_ENDPOINT', propVal(googleProps, 'token.endpoint')
-
+        buildConfigField 'String', 'GOOGLE_API_KEY', propVal(googleProps, 'api.key')
     }
     buildTypes {
         release {

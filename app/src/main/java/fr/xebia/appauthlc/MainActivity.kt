@@ -10,6 +10,8 @@ import net.openid.appauth.*
 
 class MainActivity : AppCompatActivity() {
 
+    private var authService: AuthorizationService? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -28,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         val redirectUri = Uri.parse(BuildConfig.GOOGLE_REDIRECT_URI)
 
         val authConfig = AuthorizationServiceConfiguration(authorizationEndpoint, tokenEndpoint)
-        val authorizationService = AuthorizationService(this)
+        authService = AuthorizationService(this)
 
         val request = AuthorizationRequest.Builder(
                 authConfig,
@@ -44,7 +46,7 @@ class MainActivity : AppCompatActivity() {
                 completedIntent,
                 0
         )
-        authorizationService.performAuthorizationRequest(request, pendingIntent)
+        authService?.performAuthorizationRequest(request, pendingIntent)
         finish()
     }
 
@@ -63,8 +65,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun performTokenRequest(tokenRequest: TokenRequest, state: AuthState) {
-        val authService = AuthorizationService(this@MainActivity)
-        authService.performTokenRequest(tokenRequest) { response, ex ->
+        authService?.performTokenRequest(tokenRequest) { response, ex ->
             state.update(response, ex)
             if (ex != null) {
                 Toast.makeText(this@MainActivity, "Error: $ex.message", Toast.LENGTH_LONG)
@@ -75,14 +76,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun performAction(state: AuthState, authService: AuthorizationService) {
-        state.performActionWithFreshTokens(authService) { accessToken, _, _ ->
-            Toast.makeText(
-                    this@MainActivity,
-                    "Access token: $accessToken",
-                    Toast.LENGTH_LONG
-            ).show()
+    private fun performAction(state: AuthState, authService: AuthorizationService?) {
+        authService?.let {
+            state.performActionWithFreshTokens(it) { accessToken, _, _ ->
+                DisplayNameAsyncTask(application).execute(accessToken)
+            }
         }
+    }
+
+    override fun onDestroy() {
+        authService?.dispose()
+        super.onDestroy()
     }
 
     companion object {
