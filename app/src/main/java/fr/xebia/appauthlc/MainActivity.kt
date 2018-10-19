@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
@@ -18,12 +19,34 @@ class MainActivity : AppCompatActivity(), DisplayNameAsyncTask.Listener {
         setContentView(R.layout.activity_main)
         authService = AuthorizationService(this)
 
-        when (intent?.action) {
-            Intent.ACTION_MAIN -> requestAuthCode()
-            ACTION_AUTH_CODE_RESPONSE -> handleAuthCodeResponse()
-            else -> throw IllegalStateException("Unknown intent action: ${intent?.action}")
+        val authState = restoreSavedAuthState()
+
+        if (true == authState?.isAuthorized) {
+            performAction(authState, authService)
+        } else if (authState?.lastAuthorizationResponse?.authorizationCode != null) {
+            performTokenRequest(authState)
+        } else if (isFirstLaunch()) {
+            requestAuthCode()
+        } else if (isAuthCodeResponse()) {
+            handleAuthCodeResponse()
+        } else {
+            throw IllegalStateException("Unknown intent action: ${intent?.action}")
         }
     }
+
+    private fun restoreSavedAuthState(): AuthState? {
+        val manager = PreferenceManager.getDefaultSharedPreferences(this)
+        val strAuthState = manager.getString(PREF_KEY_AUTH_STATE, null)
+        return strAuthState?.let { AuthState.jsonDeserialize(it) }
+    }
+
+    private fun persistAuthState(state: AuthState) {
+        PersistAuthStateAsyncTask(application, PREF_KEY_AUTH_STATE).execute(state)
+    }
+
+    private fun isAuthCodeResponse(): Boolean = intent?.action == ACTION_AUTH_CODE_RESPONSE
+
+    private fun isFirstLaunch(): Boolean = intent?.action == Intent.ACTION_MAIN
 
     private fun requestAuthCode() {
         val authorizationEndpoint = Uri.parse(BuildConfig.GOOGLE_AUTH_ENDPOINT)
@@ -60,21 +83,25 @@ class MainActivity : AppCompatActivity(), DisplayNameAsyncTask.Listener {
                     AuthorizationException.fromIntent(intent)
             )
 
-            state.lastAuthorizationResponse?.createTokenExchangeRequest()?.let { tokenRequest ->
-                performTokenRequest(tokenRequest, state)
-            }
+            persistAuthState(state)
+
+            performTokenRequest(state)
         }
     }
 
-    private fun performTokenRequest(tokenRequest: TokenRequest, state: AuthState) {
-        authService?.performTokenRequest(tokenRequest) { response, ex ->
-            state.update(response, ex)
-            if (ex != null) {
-                Toast.makeText(this@MainActivity, "Error: $ex.message", Toast.LENGTH_LONG)
-                        .show()
-            } else {
-                performAction(state, authService)
+    private fun performTokenRequest(state: AuthState) {
+        state.lastAuthorizationResponse?.createTokenExchangeRequest()?.let { tokenRequest ->
+            authService?.performTokenRequest(tokenRequest) { response, ex ->
+                state.update(response, ex)
+                persistAuthState(state)
+                if (ex != null) {
+                    Toast.makeText(this@MainActivity, "Error: $ex.message", Toast.LENGTH_LONG)
+                            .show()
+                } else {
+                    performAction(state, authService)
+                }
             }
+            Unit
         }
     }
 
@@ -100,5 +127,6 @@ class MainActivity : AppCompatActivity(), DisplayNameAsyncTask.Listener {
     companion object {
         private const val REQUEST_PERFORM_AUTH: Int = 42
         private const val ACTION_AUTH_CODE_RESPONSE = "ACTION_AUTH_CODE_RESPONSE"
+        private const val PREF_KEY_AUTH_STATE = "PREF_KEY_AUTH_STATE"
     }
 }
