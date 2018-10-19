@@ -40,7 +40,9 @@ class MainActivity : AppCompatActivity(), DisplayNameAsyncTask.Listener {
                 redirectUri
         ).setScope("profile").build()
 
-        val completedIntent = Intent(this, javaClass).setAction(ACTION_AUTH_CODE_RESPONSE)
+        val completedIntent = Intent(this, javaClass)
+                .setAction(ACTION_AUTH_CODE_RESPONSE)
+                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pendingIntent = PendingIntent.getActivity(
                 this,
                 REQUEST_PERFORM_AUTH,
@@ -48,7 +50,6 @@ class MainActivity : AppCompatActivity(), DisplayNameAsyncTask.Listener {
                 0
         )
         authService?.performAuthorizationRequest(request, pendingIntent)
-        finish()
     }
 
     private fun handleAuthCodeResponse() {
