@@ -6,7 +6,7 @@ import java.io.InputStreamReader
 import java.lang.ref.WeakReference
 import java.net.URL
 
-class DisplayNameAsyncTask(l: Listener) : AsyncTask<String, Unit, Unit>() {
+class FetchNameAsyncTask(l: Listener) : AsyncTask<String, Unit, Unit>() {
 
     private val listenerRef = WeakReference(l)
     private val listener

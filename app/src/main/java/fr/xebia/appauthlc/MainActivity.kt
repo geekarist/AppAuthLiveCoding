@@ -10,7 +10,7 @@ import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import net.openid.appauth.*
 
-class MainActivity : AppCompatActivity(), DisplayNameAsyncTask.Listener {
+class MainActivity : AppCompatActivity(), FetchNameAsyncTask.Listener {
 
     private var authService: AuthorizationService? = null
 
@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity(), DisplayNameAsyncTask.Listener {
     private fun performAction(state: AuthState, authService: AuthorizationService?) {
         authService?.let {
             state.performActionWithFreshTokens(it) { accessToken, _, _ ->
-                DisplayNameAsyncTask(this).execute(accessToken)
+                FetchNameAsyncTask(this).execute(accessToken)
             }
         }
     }
