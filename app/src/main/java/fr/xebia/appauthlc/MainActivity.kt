@@ -11,17 +11,28 @@ import net.openid.appauth.*
 import java.io.PrintWriter
 import java.io.StringWriter
 
-class MainActivity : AppCompatActivity(), FetchNameAsyncTask.Listener {
-
+class MainActivity : AppCompatActivity(), FetchNameAsyncTask.Listener, RestoreAuthStateAsyncTask.Listener {
     private val authorizationService by lazy { AuthorizationService(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        when (intent?.action) {
-            Intent.ACTION_MAIN -> requestAuthCode()
-            ACTION_RETURN_AUTH_CODE -> fetchName(intent)
+        restoreAuthState()
+    }
+
+    private fun restoreAuthState() {
+        RestoreAuthStateAsyncTask(this, this, PREF_AUTH_STATE).execute()
+    }
+
+    override fun onAuthStateRestored(result: AuthState?) {
+        result?.let { state ->
+            fetchName(state)
+        } ?: run {
+            when (intent?.action) {
+                Intent.ACTION_MAIN -> requestAuthCode()
+                ACTION_RETURN_AUTH_CODE -> requestToken(intent)
+            }
         }
     }
 
@@ -41,19 +52,29 @@ class MainActivity : AppCompatActivity(), FetchNameAsyncTask.Listener {
         authorizationService.performAuthorizationRequest(request, completedIntent)
     }
 
-    private fun fetchName(intent: Intent) {
+    private fun requestToken(intent: Intent) {
         val response = AuthorizationResponse.fromIntent(intent)
         val error = AuthorizationException.fromIntent(intent)
         val authState = AuthState(response, error)
+        persistAuthState(authState)
 
         response?.createTokenExchangeRequest()?.let { tokenRequest ->
             authorizationService.performTokenRequest(tokenRequest) { response, ex ->
                 authState.update(response, ex)
-                authState.performActionWithFreshTokens(authorizationService) { accessToken, _, _ ->
-                    FetchNameAsyncTask(this).execute(accessToken)
-                }
+                persistAuthState(authState)
+                fetchName(authState)
             }
         }
+    }
+
+    private fun fetchName(authState: AuthState) {
+        authState.performActionWithFreshTokens(authorizationService) { accessToken, _, _ ->
+            FetchNameAsyncTask(this).execute(accessToken)
+        }
+    }
+
+    private fun persistAuthState(authState: AuthState) {
+        PersistAuthStateAsyncTask(this, PREF_AUTH_STATE).execute(authState)
     }
 
     override fun onFetchNameSuccess(displayName: String) {
@@ -74,5 +95,6 @@ class MainActivity : AppCompatActivity(), FetchNameAsyncTask.Listener {
 
     companion object {
         private const val ACTION_RETURN_AUTH_CODE = "ACTION_RETURN_AUTH_CODE"
+        private const val PREF_AUTH_STATE = "PREF_AUTH_STATE"
     }
 }
